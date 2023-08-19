@@ -6,7 +6,6 @@ using pt_player_3d.Scripts;
 using pt_player_3d.Scripts.Movement;
 using pt_player_3d.Scripts.Rotation;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace FishNet.Example.Prediction.CharacterControllers
 {
@@ -68,6 +67,9 @@ namespace FishNet.Example.Prediction.CharacterControllers
 
         [SerializeField]
         private CharacterControllerWrapper character;
+
+        [SerializeField]
+        private CharacterControllerGroundCheck groundCheck;
 
         private float _pitch;
         private float _yaw;
@@ -145,6 +147,8 @@ namespace FishNet.Example.Prediction.CharacterControllers
         [Replicate]
         private void Move(PlayerPredictionState state, bool asServer, Channel channel = Channel.Unreliable, bool replaying = false)
         {
+            groundCheck.Tick();
+
             float deltaTime = (float)TimeManager.TickDelta;
             Vector3 direction = new Vector3(state.Horizontal, 0f, state.Vertical).normalized;
             direction = Quaternion.Euler(0, state.Yaw, 0) * direction;
@@ -166,7 +170,7 @@ namespace FishNet.Example.Prediction.CharacterControllers
             currentVelocity.y = originalY; // Ensure we dont accelerate upward / downwards, that is only for jumping / gravity
 
             // Jumping
-            if (state.IsJumpQueued)
+            if (state.IsJumpQueued && groundCheck.IsGrounded)
                 currentVelocity.y = jumpSpeed;
 
             // Gravity
