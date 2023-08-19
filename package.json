@@ -1,0 +1,10 @@
+{
+  "name": "com.poetools.player-3d-netcode",
+  "version": "0.0.1",
+  "displayName": "Poetools Player 3D Netcode",
+  "description": "Fishnet integration for Player3d",
+  "author": {
+    "name": "poetahto",
+    "email": "epic.potat@gmail.com"
+  }
+}

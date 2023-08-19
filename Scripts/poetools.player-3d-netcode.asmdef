@@ -1,0 +1,18 @@
+{
+    "name": "poetools.player-3d-netcode",
+    "rootNamespace": "",
+    "references": [
+        "GUID:7c88a4a7926ee5145ad2dfa06f454c67",
+        "GUID:8b9119f66b8d8f94e8b4cecc6c4300fe",
+        "GUID:cf055ccc66d79034da70d2946c8af815"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
