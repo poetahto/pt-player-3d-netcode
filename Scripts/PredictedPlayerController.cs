@@ -1,4 +1,5 @@
-﻿using DefaultNamespace;
+﻿using System;
+using DefaultNamespace;
 using FishNet.Object;
 using FishNet.Object.Prediction;
 using FishNet.Transporting;
@@ -68,8 +69,9 @@ namespace FishNet.Example.Prediction.CharacterControllers
 
         public override void OnStartClient()
         {
-            localCamera.enabled = IsOwner;
-            character.enabled = IsServer || IsOwner;
+            base.OnStartClient();
+            localCamera.gameObject.SetActive(IsOwner);
+            // character.enabled = IsServer || IsOwner;
         }
 
         private void OnTick()
@@ -125,9 +127,13 @@ namespace FishNet.Example.Prediction.CharacterControllers
             movementSystem.ApplyMovementInput(state.ReadInputDirection(), state.Yaw);
             movementSystem.Tick(deltaTime);
 
-            // Jumping
-            jumpingSystem.IsJumpHeld = state.IsJumpQueued;
-            jumpingSystem.Tick(deltaTime);
+            // Jumping (current buffer system causes a lot of mis-predictions for some reason)
+            if (state.IsJumpQueued && groundCheck.IsGrounded)
+            {
+                var velocity = character.Velocity;
+                velocity.y = 3.5f;
+                character.Velocity = velocity;
+            }
 
             // Gravity
             Vector3 currentVelocity = character.Velocity;
@@ -162,6 +168,11 @@ namespace FishNet.Example.Prediction.CharacterControllers
                 _vertical = direction.z;
                 _horizontal = direction.x;
             }
+        }
+
+        private void OnGUI()
+        {
+            GUILayout.Label($"{_isJumpQueued}");
         }
     }
 }
