@@ -9,61 +9,21 @@ using UnityEngine;
 
 namespace FishNet.Example.Prediction.CharacterControllers
 {
-    // The data sent from a client to the server, informing it about some actions it will take.
-    public struct PlayerPredictionState : IReplicateData
-    {
-        public float Horizontal;
-        public float Vertical;
-        public float Yaw;
-        public bool IsJumpQueued;
-
-        private uint _tick;
-        public void Dispose() { }
-        public uint GetTick() => _tick;
-        public void SetTick(uint value) => _tick = value;
-    }
-
-    // The data sent back to the client from the server, correcting any mistakes in the prediction.
-    public struct PlayerReconcileState : IReconcileData
-    {
-        public Vector3 Position;
-        public Vector3 Velocity;
-
-        public PlayerReconcileState(Vector3 position, Vector3 velocity)
-        {
-            Position = position;
-            Velocity = velocity;
-            _tick = 0;
-        }
-
-        private uint _tick;
-        public void Dispose() { }
-        public uint GetTick() => _tick;
-        public void SetTick(uint value) => _tick = value;
-    }
-
     /// <summary>
     /// Intercepts input events, and applies client-side prediction to them through FishNet.
+    /// Movement and jumping are entirely predicted + reconciled.
+    /// Rotation is not reconciled, but is synced for correctly predicting movement directions and such.
     /// </summary>
-    public class PredictedPlayerController : NetworkBehaviour, IJumpingSystem, IMovementSystem, IRotationSystem
+    public class PredictedPlayerController : NetworkBehaviour, IJumpingSystem, IMovementSystem
     {
         [SerializeField]
-        private float moveRate = 5f;
+        private StandardMovementSystem movementSystem;
 
         [SerializeField]
-        private float acceleration = 25;
+        private JumpingSystem jumpingSystem;
 
         [SerializeField]
-        private float deceleration = 7;
-
-        [SerializeField]
-        private float jumpSpeed = 5f;
-
-        [SerializeField]
-        private float gravity = 1;
-
-        [SerializeField]
-        private Camera localCamera;
+        private RotationSystem rotationSystem;
 
         [SerializeField]
         private CharacterControllerWrapper character;
@@ -71,8 +31,11 @@ namespace FishNet.Example.Prediction.CharacterControllers
         [SerializeField]
         private CharacterControllerGroundCheck groundCheck;
 
-        private float _pitch;
-        private float _yaw;
+        [SerializeField]
+        private Camera localCamera;
+
+        // private float _pitch;
+        // private float _yaw;
         private float _horizontal;
         private float _vertical;
         private bool _isJumpQueued;
@@ -83,6 +46,9 @@ namespace FishNet.Example.Prediction.CharacterControllers
 
             // This script aggressively controls the update timing for most things.
             if (character != null) character.autoUpdate = false;
+            if (groundCheck != null) groundCheck.autoUpdate = false;
+            if (movementSystem != null) movementSystem.autoUpdate = false;
+            if (jumpingSystem != null) jumpingSystem.autoUpdate = false;
         }
 
         private void Awake()
@@ -124,7 +90,7 @@ namespace FishNet.Example.Prediction.CharacterControllers
             {
                 Horizontal = _horizontal,
                 Vertical = _vertical,
-                Yaw = _yaw,
+                Yaw = rotationSystem.Yaw,
                 IsJumpQueued = _isJumpQueued,
             };
 
@@ -144,37 +110,24 @@ namespace FishNet.Example.Prediction.CharacterControllers
             return result;
         }
 
+        // === Movement Sequencing ===
         [Replicate]
         private void Move(PlayerPredictionState state, bool asServer, Channel channel = Channel.Unreliable, bool replaying = false)
         {
             groundCheck.Tick();
-
             float deltaTime = (float)TimeManager.TickDelta;
-            Vector3 direction = new Vector3(state.Horizontal, 0f, state.Vertical).normalized;
-            direction = Quaternion.Euler(0, state.Yaw, 0) * direction;
-            Vector3 targetVelocity = direction * moveRate;
-            Vector3 currentVelocity = character.Velocity;
-            float originalY = currentVelocity.y;
 
-            if (state.Horizontal != 0 && state.Vertical != 0)
-            {
-                // Acceleration
-                currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, acceleration * deltaTime);
-            }
-            else
-            {
-                // Deceleration
-                currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, deceleration * deltaTime);
-            }
-
-            currentVelocity.y = originalY; // Ensure we dont accelerate upward / downwards, that is only for jumping / gravity
+            // Movement
+            movementSystem.ApplyMovementInput(state.ReadInputDirection(), state.Yaw);
+            movementSystem.Tick(deltaTime);
 
             // Jumping
-            if (state.IsJumpQueued && groundCheck.IsGrounded)
-                currentVelocity.y = jumpSpeed;
+            jumpingSystem.IsJumpHeld = state.IsJumpQueued;
+            jumpingSystem.Tick(deltaTime);
 
             // Gravity
-            currentVelocity += new Vector3(0f, gravity, 0f);
+            Vector3 currentVelocity = character.Velocity;
+            currentVelocity += new Vector3(0f, Physics.gravity.y * deltaTime, 0f);
 
             // I don't think we need to sync yet, and it could get really slow during replays.
             character.Velocity = currentVelocity;
@@ -198,25 +151,25 @@ namespace FishNet.Example.Prediction.CharacterControllers
             }
         }
 
-        public Vector3 Rotation
-        {
-            get => new Vector3(_pitch, _yaw, 0);
-            set
-            {
-                if (IsOwner)
-                {
-                    _yaw = value.y;
-                    _pitch = value.x;
-                    _pitch = Mathf.Clamp(_pitch, -90, 90);
-                    localCamera.transform.rotation = Quaternion.Euler(_pitch, _yaw, 0);
-                }
-            }
-        }
-
-        public void ApplyRotationInput(Vector2 delta)
-        {
-            Rotation += new Vector3(delta.y, delta.x, 0);
-        }
+        // public Vector3 Rotation
+        // {
+        //     get => new Vector3(_pitch, _yaw, 0);
+        //     set
+        //     {
+        //         if (IsOwner)
+        //         {
+        //             _yaw = value.y;
+        //             _pitch = value.x;
+        //             _pitch = Mathf.Clamp(_pitch, -90, 90);
+        //             localCamera.transform.rotation = Quaternion.Euler(_pitch, _yaw, 0);
+        //         }
+        //     }
+        // }
+        //
+        // public void ApplyRotationInput(Vector2 delta)
+        // {
+        //     Rotation += new Vector3(delta.y, delta.x, 0);
+        // }
 
         public void ApplyMovementInput(Vector3 direction)
         {
