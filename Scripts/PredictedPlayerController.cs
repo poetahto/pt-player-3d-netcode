@@ -16,6 +16,8 @@ namespace FishNet.Example.Prediction.CharacterControllers
     /// </summary>
     public class PredictedPlayerController : NetworkBehaviour, IJumpingSystem, IMovementSystem
     {
+        [Header("Systems")]
+
         [SerializeField]
         private StandardMovementSystem movementSystem;
 
@@ -24,6 +26,8 @@ namespace FishNet.Example.Prediction.CharacterControllers
 
         [SerializeField]
         private RotationSystem rotationSystem;
+
+        [Header("References")]
 
         [SerializeField]
         private CharacterControllerWrapper character;
@@ -150,26 +154,6 @@ namespace FishNet.Example.Prediction.CharacterControllers
                     _isJumpQueued |= value;
             }
         }
-
-        // public Vector3 Rotation
-        // {
-        //     get => new Vector3(_pitch, _yaw, 0);
-        //     set
-        //     {
-        //         if (IsOwner)
-        //         {
-        //             _yaw = value.y;
-        //             _pitch = value.x;
-        //             _pitch = Mathf.Clamp(_pitch, -90, 90);
-        //             localCamera.transform.rotation = Quaternion.Euler(_pitch, _yaw, 0);
-        //         }
-        //     }
-        // }
-        //
-        // public void ApplyRotationInput(Vector2 delta)
-        // {
-        //     Rotation += new Vector3(delta.y, delta.x, 0);
-        // }
 
         public void ApplyMovementInput(Vector3 direction)
         {
