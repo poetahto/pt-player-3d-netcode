@@ -169,10 +169,5 @@ namespace FishNet.Example.Prediction.CharacterControllers
                 _horizontal = direction.x;
             }
         }
-
-        private void OnGUI()
-        {
-            GUILayout.Label($"{_isJumpQueued}");
-        }
     }
 }
