@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using FishNet.Object;
+using UnityEngine;
 
 namespace DefaultNamespace
 {
@@ -13,10 +14,13 @@ namespace DefaultNamespace
         private Vector3 _direction;
         private float _passedTime;
 
-        public void Initialize(Vector3 direction, float passedTime)
+        public NetworkObject Owner { get; private set; }
+
+        public void Initialize(Vector3 direction, float passedTime, NetworkObject owner)
         {
             _direction = direction;
             _passedTime = passedTime;
+            Owner = owner;
 
             transform.forward = direction;
         }
@@ -45,7 +49,6 @@ namespace DefaultNamespace
                 passedTimeDelta = step;
             }
 
-            // Vector3 velocity = _direction * speed;
             transform.position += _direction * (speed * (deltaTime + passedTimeDelta));
         }
     }

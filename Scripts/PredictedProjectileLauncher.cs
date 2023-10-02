@@ -50,7 +50,7 @@ namespace DefaultNamespace
         private void SpawnProjectile(Vector3 position, Vector3 direction, float passedTime)
         {
             PredictedProjectile projectileInstance = Instantiate(projectilePrefab, position, Quaternion.identity);
-            projectileInstance.Initialize(direction, passedTime);
+            projectileInstance.Initialize(direction, passedTime, NetworkObject);
         }
     }
 }
