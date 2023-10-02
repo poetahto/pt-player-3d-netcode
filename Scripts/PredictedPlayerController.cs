@@ -1,5 +1,4 @@
-﻿using System;
-using DefaultNamespace;
+﻿using DefaultNamespace;
 using FishNet.Object;
 using FishNet.Object.Prediction;
 using FishNet.Transporting;
@@ -39,8 +38,6 @@ namespace FishNet.Example.Prediction.CharacterControllers
         [SerializeField]
         private Camera localCamera;
 
-        // private float _pitch;
-        // private float _yaw;
         private float _horizontal;
         private float _vertical;
         private bool _isJumpQueued;
@@ -58,6 +55,7 @@ namespace FishNet.Example.Prediction.CharacterControllers
 
         private void Awake()
         {
+            localCamera.gameObject.SetActive(false);
             InstanceFinder.TimeManager.OnTick += OnTick;
         }
 
@@ -71,7 +69,6 @@ namespace FishNet.Example.Prediction.CharacterControllers
         {
             base.OnStartClient();
             localCamera.gameObject.SetActive(IsOwner);
-            // character.enabled = IsServer || IsOwner;
         }
 
         private void OnTick()
