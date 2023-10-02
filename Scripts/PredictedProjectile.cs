@@ -14,13 +14,13 @@ namespace DefaultNamespace
         private Vector3 _direction;
         private float _passedTime;
 
-        public NetworkObject Owner { get; private set; }
+        public NetworkObject OwnerObject { get; private set; }
 
         public void Initialize(Vector3 direction, float passedTime, NetworkObject owner)
         {
             _direction = direction;
             _passedTime = passedTime;
-            Owner = owner;
+            OwnerObject = owner;
 
             transform.forward = direction;
         }
